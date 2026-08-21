@@ -1,0 +1,56 @@
+# 첫 MVP 범위
+
+## 포함 (실제 동작)
+| # | 항목 | 위치 |
+|---|---|---|
+| 1 | 모바일 프레임 + 하단 5탭 | `src/App.tsx`, `src/ui/TabBar.tsx` |
+| 2 | **3단계 캐릭터 생성 온보딩** (닉네임·성별·나이 → 랜덤 캐릭터 → 시작 암장 → 최종 확인) | `src/ui/OnboardingFlow.tsx` |
+| 2a | 고정 총합 랜덤 캐릭터 생성 (외형·체형·키·주특기·성격·능력치·숙련도·자기소개·칭호) | `src/game/characterGen.ts` |
+| 2b | **부산 웨이브락 3지점** 선택 (서면·남천·부산대, 유불리 없음) | `src/content/gyms.ts` |
+| 2c | 기존 세이브 마이그레이션 + 더보기의 기본 정보 보완 / 다시 만들기 | `src/store/migrate.ts`, `src/ui/ProfileSettings.tsx` |
+| 3 | 홈 화면 (진행 일정, 남은 시간, 상태, 경고) | `src/ui/HomeScreen.tsx` |
+| 4 | 월~일 주간 일정 편성 + 추천 편성 3종 | `src/ui/ScheduleScreen.tsx` |
+| 5 | 실시간 자동 진행 + 오프라인 계산(상한 적용) | `src/game/progress.ts` |
+| 6 | 오프라인 복귀 리포트 | `src/ui/OfflineReport.tsx` |
+| 7 | 볼더링 문제 5개 × 3~5동작 × 2~3베타 | `src/content/problems.ts` |
+| 8 | 대성공/성공/부분실패/추락 4단계 판정 | `src/game/climb.ts` |
+| 9 | 선택 즉시 도트 연출 (0.3초 내 반응) | `src/ui/ClimbSession.tsx` |
+| 10 | 직접 등반 → 현재 일정 시간 단축 | `src/game/progress.ts` (`bonusMs`) |
+| 11 | 무브 숙련도 9종 (체감 곡선) | `src/game/character.ts` |
+| 12 | 스킬트리 3계열 12스킬, 효과가 판정에 반영 | `src/content/skills.ts` + `climb.ts` |
+| 13 | 알바 3종 / NPC 3명(친밀도·해금 효과) | `src/content/activities.ts`, `npcs.ts` |
+| 14 | 부상 5단계 + 사전 경고 + 재활 활동 | `src/game/character.ts` |
+| 15 | 도트 캐릭터(포즈 15종 · 머리 6종 · 4단계 크기 체계) + 절차적 클라이밍 벽 | `src/ui/Sprite.tsx`, `Wall.tsx` |
+| 16 | 빠른 진행 설정 / 연출 스킵 | `src/ui/MoreScreen.tsx` |
+| 17 | 로컬 저장·복원·초기화 | `src/store/localAdapter.ts` |
+| 18 | Supabase 스키마 + 어댑터 골격 + RLS SQL | `supabase/migrations/`, `src/store/supabaseAdapter.ts` |
+| 19 | 게임 로직 단위 테스트 | `src/game/__tests__/` |
+
+## 제외 (의도적)
+실시간 멀티플레이 · 실시간 채팅 · 전국/세계 암장 전체 · 아이템 거래 · 결제 · 광고 ·
+길드전 · 관리자 페이지 · 수백 개 스킬/장비 · 실시간 조작 등반 · 타이밍 미니게임
+
+UI에서 "준비 중"으로만 노출: 랭킹, 크루, 원정, 장비 상세, 친구
+
+## 이번 업데이트에서 의도적으로 하지 않은 것
+- **지점별 벽 성향·전용 문제·NPC** — 확인되지 않은 실제 시설 특성을 사실처럼 만들지 않기 위해 보류.
+  데이터 필드(`Gym.homeBonus`, `wallTypes`, `npcIds`)만 준비해 두었다.
+- **나이·성별의 능력치 반영** — 특정 선택이 유리해지면 안 되므로 표시·문구용으로만 쓴다.
+- **닉네임 중복 검사** — 서버 연결 전이라 하지 않는다.
+- **캐릭터 시드 악용 방지** — 온보딩 다시 뽑기는 무제한. 시드는 저장해 두었으니
+  서버 경쟁 도입 시 검증에 쓸 수 있다.
+
+## 완료 기준
+- `npm run test`, `npm run typecheck`, `npm run build` 전부 통과
+- 390×844에서 가로 스크롤 없음 / 하단 탭 안전영역 처리
+- 새로고침 후 진행 상태 유지
+- 일정 편성 → 자동 진행 → 오프라인 리포트 → 등반 → 성장 루프가 끊기지 않음
+- 문서의 구현 상태가 실제 코드와 일치
+
+## 이후 단계 (우선순위)
+1. 장비/인벤토리 실동작 (현재 타입만 존재)
+2. 부산 2번째 암장 + 해금 조건
+3. Supabase 실제 연결 + 서버 시간 기준 오프라인 진행
+4. 랭킹 (서버 계산)
+5. 원정 / 자연 암벽
+6. 크루
