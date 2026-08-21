@@ -78,18 +78,23 @@ describe('웨이브락 3지점', () => {
     ])
   })
 
-  it('어느 지점을 골라도 같은 문제 5개를 즐길 수 있다', () => {
-    const counts = GYMS.map((g) => problemsOfGym(g.id).map((p) => p.id).join(','))
+  it('웨이브락 세 지점은 어디를 골라도 같은 문제 5개를 즐길 수 있다', () => {
+    const counts = SELECTABLE_GYMS.map((g) => problemsOfGym(g.id).map((p) => p.id).join(','))
     expect(new Set(counts).size).toBe(1)
-    expect(problemsOfGym(GYMS[0].id)).toHaveLength(5)
+    expect(problemsOfGym(SELECTABLE_GYMS[0].id)).toHaveLength(5)
   })
 
-  it('지점 간 능력치·보상 보너스가 없다', () => {
-    for (const g of GYMS) expect(g.homeBonus).toHaveLength(0)
+  it('웨이브락 지점 간 능력치·보상 보너스가 없다', () => {
+    for (const g of SELECTABLE_GYMS) expect(g.homeBonus).toHaveLength(0)
   })
 
   it('지점마다 시각 테마가 다르다', () => {
-    expect(new Set(GYMS.map((g) => g.theme.sign)).size).toBe(3)
+    expect(new Set(SELECTABLE_GYMS.map((g) => g.theme.sign)).size).toBe(SELECTABLE_GYMS.length)
+  })
+
+  it('원정 암장은 홈짐 후보에 들어가지 않는다', () => {
+    expect(SELECTABLE_GYMS.some((g) => g.id === 'busan-cliffside')).toBe(false)
+    expect(GYMS.some((g) => g.id === 'busan-cliffside')).toBe(true)
   })
 })
 

@@ -10,6 +10,7 @@ export type JointKey = 'finger' | 'shoulder' | 'knee'
 export type MoveKey =
   | 'highstep' | 'flagging' | 'lockoff' | 'intermediate'
   | 'heelhook' | 'dyno' | 'footswap' | 'rest' | 'chalk'
+  | 'crimp' | 'toehook' | 'matching'
 
 export type WallType = '슬랩' | '수직' | '오버행' | '루프'
 export type ReachTag = 'far' | 'compressed' | 'neutral'
@@ -348,6 +349,8 @@ export interface StepContext {
   climber: Climber
   problem: ClimbingProblem
   mods: ClimbModifiers
+  /** 이 문제를 붙어보며 쌓인 이해도 0~100. 프로젝트 진척이 성공률을 조금 올린다 */
+  understanding?: number
 }
 
 export interface StepResult {

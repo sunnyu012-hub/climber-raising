@@ -76,9 +76,12 @@ export function baseChanceOf(ctx: StepContext, choice: BetaChoice): number {
     choice.moves.reduce((a, m) => a + (mods.moveChance[m] ?? 0), 0) +
     wallBonus(mods, problem.wall)
 
+  // 프로젝트 이해도 — 같은 문제를 붙어본 만큼 조금 유리해진다
+  const projectTerm = BALANCE.project.chanceBonus * ((ctx.understanding ?? 0) / 100)
+
   return (
     choice.baseChance + statTerm + masteryTerm + fatigueTerm + hpTerm +
-    jointTerm + moodTerm + gradeTerm + skillTerm + reachAdjust(ctx, choice)
+    jointTerm + moodTerm + gradeTerm + skillTerm + projectTerm + reachAdjust(ctx, choice)
   )
 }
 

@@ -4,6 +4,7 @@ import { baseChanceOf, isSuccess, resolveStep } from './climb'
 import { stateModifiers } from './character'
 import { applyStepResult } from './progress'
 import { emit, grantTitle, moveEvents, pushLog } from './events'
+import { now } from './clock'
 import { unlockBlocker } from './unlock'
 import type { Competition, GameState, StepContext } from './types'
 import type { Rng } from './rng'
@@ -67,8 +68,7 @@ export function runCompetition(
         baseChanceOf(ctx, c) > baseChanceOf(ctx, a) ? c : a)
       const r = resolveStep(ctx, best, rng)
       applyStepResult(s.climber, r, rng)
-      emit(s, { t: 'move.used', move: best.moves[0] })
-      for (const ev of moveEvents(best.moves.slice(1))) emit(s, ev)
+      for (const ev of moveEvents(best.moves)) emit(s, ev)
       if (isSuccess(r.outcome)) { step += 1; retries = 0 }
       else if (r.outcome === 'partial' && retries < 1) retries += 1
       else break
@@ -94,11 +94,11 @@ export function runCompetition(
   const rec = s.competitionRecords.find((r) => r.competitionId === compId)
   if (rec) {
     rec.entries += 1
-    rec.lastAt = Date.now()
+    rec.lastAt = now()
     if (score > rec.bestScore) { rec.bestScore = score; rec.bestTier = t.tier }
   } else {
     s.competitionRecords.push({
-      competitionId: compId, bestScore: score, bestTier: t.tier, entries: 1, lastAt: Date.now(),
+      competitionId: compId, bestScore: score, bestTier: t.tier, entries: 1, lastAt: now(),
     })
   }
   emit(s, { t: 'competition.done', competitionId: compId, tier: t.tier })

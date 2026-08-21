@@ -1,50 +1,34 @@
 import { BALANCE } from './balance'
-import { getProblem } from '../content/problems'
 import type { GameState, ProjectProgress } from './types'
 
 /**
- * 프로젝트 문제 — 한 번에 못 풀어도 진척이 남는다.
- * 실패해도 동작 이해도·발견한 베타·다음 시도 보정이 쌓인다.
+ * 프로젝트 문제 — 못 풀어도 남는 것.
+ * 시도할수록 "이해도"가 오르고, 그 이해도가 다음 시도의 성공률을 조금 올린다.
+ * (이해도 보정은 `climb.ts`의 `baseChanceOf`에서 한 번만 적용된다.)
  */
+export const projectOf = (s: GameState, problemId: string): ProjectProgress =>
+  (s.projects[problemId] ??= {
+    problemId, bestStep: 0, attempts: 0, knownBetas: [], understanding: 0,
+  })
 
-export const emptyProject = (problemId: string): ProjectProgress => ({
-  problemId, bestStep: 0, attempts: 0, knownBetas: [], understanding: 0,
-})
+export const understandingOf = (s: GameState, problemId: string): number =>
+  s.projects[problemId]?.understanding ?? 0
 
-export const getProject = (s: GameState, problemId: string): ProjectProgress | undefined =>
-  s.projects[problemId]
-
-/** 이해도가 주는 성공률 보정 (상한 있음) */
-export function projectBonus(s: GameState, problemId: string): number {
-  const p = s.projects[problemId]
-  if (!p) return 0
-  return (p.understanding / 100) * BALANCE.project.maxBonus
-}
-
-/** 한 동작을 시도할 때마다 진척을 기록한다 */
-export function recordStep(
+/** 동작 하나의 결과를 프로젝트 기록에 남긴다. */
+export function noteStep(
   s: GameState, problemId: string, stepIndex: number, choiceId: string, success: boolean,
 ): void {
-  const prob = getProblem(problemId)
-  if (!prob?.isProject) return
-  const p = (s.projects[problemId] ??= emptyProject(problemId))
-
-  const betaKey = `${stepIndex}:${choiceId}`
-  if (success && !p.knownBetas.includes(betaKey)) {
-    p.knownBetas.push(betaKey)
-    p.understanding = Math.min(100, p.understanding + BALANCE.project.betaGain)
+  const p = projectOf(s, problemId)
+  if (success) {
+    p.bestStep = Math.max(p.bestStep, stepIndex + 1)
+    if (!p.knownBetas.includes(choiceId)) p.knownBetas.push(choiceId)
   }
-  if (stepIndex + 1 > p.bestStep) {
-    p.bestStep = stepIndex + 1
-    p.understanding = Math.min(100, p.understanding + BALANCE.project.stepGain)
-  }
-  // 실패해도 조금은 남는다
-  if (!success) p.understanding = Math.min(100, p.understanding + BALANCE.project.failGain)
+  p.understanding = Math.min(
+    BALANCE.project.understandingMax,
+    p.understanding + (success ? BALANCE.project.perStep : BALANCE.project.perFail),
+  )
 }
 
-export function recordAttempt(s: GameState, problemId: string): void {
-  const prob = getProblem(problemId)
-  if (!prob?.isProject) return
-  const p = (s.projects[problemId] ??= emptyProject(problemId))
-  p.attempts += 1
+export function noteAttempt(s: GameState, problemId: string): void {
+  projectOf(s, problemId).attempts += 1
 }

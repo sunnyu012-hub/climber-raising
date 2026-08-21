@@ -1,12 +1,10 @@
 import { BALANCE } from './balance'
 import { now } from './clock'
 import { STARTING_GYM_ID } from '../content/gyms'
+import { HOME_REGION_ID } from '../content/regions'
 import { PRESETS } from '../content/activities'
 import { generateCharacter } from './characterGen'
 import { emptyStats } from './events'
-import { emptyQuests } from './quests'
-import { emptyWorld } from './world'
-import { emptyInventory } from './inventory'
 import { SLOT_ORDER, SLOT_UNLOCK_LEVEL } from '../content/equipment'
 import { CURRENT_SEASON_ID } from '../content/progression'
 import type { Climber, EquipSlot, GameState, Gender, OnboardingDraft, ReachTrait } from './types'
@@ -64,12 +62,22 @@ export function createNewGame(climber?: Climber, gymId: string = STARTING_GYM_ID
     // ---- 전체 시스템 뼈대 ----
     stats: emptyStats(),
     collection: { problem: [], gym: [gymId], npc: [], equipment: [] },
-    quests: emptyQuests(),
+    quests: {
+      active: [], done: [],
+      dailySeed: 0, dailyPicked: [], weeklyPicked: [],
+      lastDailyDay: -1, lastWeeklyWeek: -1,
+    },
     achievementProgress: {},
     titles: ['title-rookie'],
     equippedTitle: 'title-rookie',
-    world: emptyWorld(gymId),
-    inventory: emptyInventory(),
+    world: {
+      visitedGyms: [gymId],
+      unlockedRegions: [HOME_REGION_ID],
+      regionFamiliarity: { [HOME_REGION_ID]: 5 },
+      gymFamiliarity: { [gymId]: 10 },
+      expeditions: [], badges: [], fame: 0,
+    },
+    inventory: { items: [], equipped: {}, unlockedSlots: slotsForLevel(1) },
     career: {},
     projects: {},
     competitionRecords: [],

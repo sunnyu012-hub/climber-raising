@@ -109,18 +109,6 @@ export const BALANCE = {
     ageDefault: 28,
   },
 
-  /** 프로젝트 문제 — 실패해도 남는 진척 */
-  project: {
-    /** 이해도 100일 때 성공률 보정 상한 */
-    maxBonus: 0.08,
-    /** 새 베타를 찾았을 때 */
-    betaGain: 12,
-    /** 더 멀리 갔을 때 */
-    stepGain: 8,
-    /** 실패해도 남는 몫 */
-    failGain: 3,
-  },
-
   /** 원정 · 방문 */
   travel: {
     /** 홈짐 변경 등록비 */
@@ -135,6 +123,17 @@ export const BALANCE = {
     stepScore: 4,
     /** 원트 보너스 */
     flashBonus: 10,
+  },
+
+  /** 프로젝트 문제 — 못 풀어도 남는 이해도 */
+  project: {
+    /** 동작 성공 시 오르는 이해도 */
+    perStep: 2,
+    /** 떨어져도 이만큼은 남는다 */
+    perFail: 1,
+    understandingMax: 100,
+    /** 이해도 100일 때 성공률에 더해지는 최대치 */
+    chanceBonus: 0.06,
   },
 
   npc: { maxFriendship: 100 },
@@ -166,6 +165,9 @@ export const MOVE_LABEL: Record<string, string> = {
   footswap: '발 바꾸기',
   rest: '휴식',
   chalk: '초크 사용',
+  crimp: '크림프',
+  toehook: '토 훅',
+  matching: '매칭',
 }
 
 export const REACH_LABEL: Record<string, string> = {

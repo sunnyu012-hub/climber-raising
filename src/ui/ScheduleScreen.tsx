@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { DAY_NAMES, JOINT_LABEL, STAT_LABEL } from '../game/balance'
+import { DAY_NAMES, JOINT_LABEL } from '../game/balance'
 import { buildWarnings } from '../game/character'
+import { activityBlocker } from '../game/careers'
 import { restDaysInWeek } from '../game/progress'
 import { ACTIVITIES, KIND_LABEL, PRESETS, getActivity } from '../content/activities'
 import { useGame } from '../store/gameStore'
 import { Card, Warnings } from './bits'
-import type { ActivityDefinition, JointKey, StatKey } from '../game/types'
+import type { ActivityDefinition, JointKey } from '../game/types'
 
 function ActivityMeta({ a }: { a: ActivityDefinition }) {
   const parts: string[] = []
@@ -88,19 +89,7 @@ export function ScheduleScreen() {
 function ActivityPicker({ day, onPick, onClose }: {
   day: number; onPick: (id: string | null) => void; onClose: () => void
 }) {
-  const climber = useGame((s) => s.state.climber)
-  const npc = useGame((s) => s.state.npc)
-
-  const meets = (a: ActivityDefinition): boolean => {
-    if (!a.requires) return true
-    for (const [k, v] of Object.entries(a.requires.stats ?? {}) as [StatKey, number][]) {
-      if (climber.stats[k] < v) return false
-    }
-    for (const [id, v] of Object.entries(a.requires.friendship ?? {})) {
-      if ((npc[id] ?? 0) < v) return false
-    }
-    return true
-  }
+  const state = useGame((s) => s.state)
 
   const kinds: ActivityDefinition['kind'][] = ['train', 'rest', 'rehab', 'job', 'social']
 
@@ -119,7 +108,8 @@ function ActivityPicker({ day, onPick, onClose }: {
             <div key={kind} style={{ marginBottom: 10 }}>
               <div className="tiny muted" style={{ marginBottom: 4 }}>{KIND_LABEL[kind]}</div>
               {list.map((a) => {
-                const ok = meets(a)
+                const blocked = activityBlocker(state, a)
+                const ok = !blocked
                 return (
                   <button
                     key={a.id}
@@ -132,7 +122,7 @@ function ActivityPicker({ day, onPick, onClose }: {
                     <span className="dbody">
                       <span className="dname-t">{a.name}</span>
                       <span className="dmeta">
-                        {ok ? <ActivityMeta a={a} /> : requireText(a)}
+                        {ok ? <ActivityMeta a={a} /> : blocked}
                       </span>
                       <span className="dmeta">{a.desc}</span>
                     </span>
@@ -147,11 +137,4 @@ function ActivityPicker({ day, onPick, onClose }: {
       </div>
     </div>
   )
-}
-
-function requireText(a: ActivityDefinition): string {
-  const s = Object.entries(a.requires?.stats ?? {})
-    .map(([k, v]) => `${STAT_LABEL[k]} ${v}`)
-    .join(', ')
-  return `🔒 필요: ${s}`
 }

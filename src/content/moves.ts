@@ -11,6 +11,9 @@ export const MOVE_INFO: Record<MoveKey, { joint: JointKey; pose: PoseKey; blurb:
   footswap:     { joint: 'knee',     pose: 'stepUp',   blurb: '발을 바꿔 자세를 정리한다' },
   rest:         { joint: 'shoulder', pose: 'rest',     blurb: '털고 숨을 고른다' },
   chalk:        { joint: 'finger',   pose: 'idle',     blurb: '초크를 바른다' },
+  crimp:        { joint: 'finger',   pose: 'pull',     blurb: '손가락을 세워 작은 홀드를 잡는다' },
+  toehook:      { joint: 'knee',     pose: 'heel',     blurb: '발등을 걸어 몸을 붙인다' },
+  matching:     { joint: 'finger',   pose: 'reach',    blurb: '한 홀드에 두 손을 모은다' },
 }
 
 export const ALL_MOVES = Object.keys(MOVE_INFO) as MoveKey[]

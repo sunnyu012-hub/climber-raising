@@ -1,10 +1,14 @@
 import { BALANCE } from './balance'
 import type {
-  Climber, ClimbModifiers, Condition, Gym, JointKey, JointStage, MoveKey, SkillEffect, StatKey, WallType,
+  Climber, ClimbModifiers, Condition, GameState, Gym, JointKey, JointStage, MoveKey,
+  SkillEffect, StatKey, WallType,
 } from './types'
 import { SKILLS } from '../content/skills'
 import { NPCS } from '../content/npcs'
 import { getPersonality } from '../content/traits'
+import { getItem } from '../content/equipment'
+import { getTitle } from '../content/progression'
+import { getGym } from '../content/gyms'
 
 export const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 export const clamp100 = (v: number) => clamp(v, 0, 100)

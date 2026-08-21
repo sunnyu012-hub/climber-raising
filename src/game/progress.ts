@@ -1,9 +1,9 @@
 import { BALANCE, DAY_NAMES, JOINT_LABEL, STAT_LABEL } from './balance'
 import { ACTIVITIES, getActivity } from '../content/activities'
 import { getGym } from '../content/gyms'
-import { careerOfActivity } from '../content/progression'
+import { bumpCareer } from './careers'
 import { emit } from './events'
-import { refreshQuests } from './quests'
+import { syncQuests } from './quests'
 import { clamp100, collectModifiers, isInjured, levelExpNeeded, masteryGain, statExpNeeded } from './character'
 import { josa } from './text'
 import type { Rng } from './rng'
@@ -109,9 +109,8 @@ function runOneDay(state: GameState, rng: Rng): DayResult {
     if (money > 0) emit(state, { t: 'money.earn', amount: money, source: act.id })
     if (money < 0) emit(state, { t: 'money.spend', amount: -money, sink: act.id })
 
-    // 알바를 반복하면 커리어 숙련도가 쌓이고 다음 알바가 열린다
-    const career = careerOfActivity(act.id)
-    if (career) state.career[career.id] = Math.min(200, (state.career[career.id] ?? 0) + 5)
+    // 알바를 반복하면 경력이 쌓이고 상위 알바가 열린다
+    bumpCareer(state, act.id)
 
     for (const ev of act.events) {
       if (rng() >= ev.chance) continue
@@ -195,7 +194,7 @@ function runOneDay(state: GameState, rng: Rng): DayResult {
     state.schedule.week += 1
     state.directPlayCount = 0
   }
-  refreshQuests(state)
+  syncQuests(state)
   return result
 }
 
