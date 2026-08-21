@@ -50,6 +50,9 @@ docs/         기획·아키텍처·밸런스·콘텐츠 가이드
 - [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — 구현 체크리스트 (현재 상태)
 - [`docs/BALANCE.md`](docs/BALANCE.md) — 밸런스 수치와 의미
 - [`docs/CONTENT_GUIDE.md`](docs/CONTENT_GUIDE.md) — **코드 수정 없이 콘텐츠 추가하는 법**
+- [`docs/WORLD_PROGRESSION.md`](docs/WORLD_PROGRESSION.md) — 지역 계층 · 해금 조건 · 진행 흐름
+- [`docs/SERVER_AUTHORITY.md`](docs/SERVER_AUTHORITY.md) — 서버가 맡아야 할 계산과 전환 지점
+- [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md) — 테스트 작성 규칙 · 모바일 검수 기준
 - [`ASSET_MANIFEST.md`](ASSET_MANIFEST.md) — 에셋 목록과 출처
 
 ## 콘텐츠 추가
@@ -88,7 +91,32 @@ npm i @supabase/supabase-js
 기존 사용자는 온보딩을 다시 보지 않는다. 더보기 탭에서
 `캐릭터 기본 정보 설정`(성별·나이·지점 보완)과 `캐릭터 생성 화면 미리보기`를 쓸 수 있다.
 
+## 시스템 지도
+
+| 시스템 | 상태 |
+|---|---|
+| 캐릭터 생성 · 주간 일정 · 방치 진행 · 등반 · 성장 | ✅ 작동 |
+| 장비/인벤토리 · 상점 · 퀘스트 · 업적/칭호 · 도감 | ✅ 작동 |
+| 월드맵/지역 해금 · 암장 이동 · 원정 · 미니대회 · 기록 | ✅ 작동 |
+| 알바 커리어 · NPC 관계 · 부상/회복 · 개발자 도구 | ✅ 작동 |
+| 크루 · 랭킹 순위 · 시즌 | 🔌 서버 연결 필요 (화면은 있고 정직하게 표시) |
+| 전국·해외 지역 | 🚧 해금 조건만 표시 |
+
+**진행 판정은 전부 이벤트로 한다.** 퀘스트를 수동으로 수락하거나 제출하는 화면이 없다 —
+실제로 한 행동(`GameEvent`)만 보고 퀘스트·업적·도감·기록이 스스로 갱신된다.
+이 구조가 곧 서버 전환 지점이다 → [`docs/SERVER_AUTHORITY.md`](docs/SERVER_AUTHORITY.md)
+
+## 대표 플레이 흐름
+
+```
+캐릭터 생성 → 홈짐 선택 → 일정 편성 → 등반 → 퀘스트 보상
+→ 알바로 돈 → 장비 구매·착용(판정 반영) → 다른 지점 방문
+→ 부산 원정 → 미니대회 → 기록·도감
+```
+
 ## 현재 상태
+
+✅ 테스트 134개 통과 · 빌드 330KB(gzip 103KB) · 이미지 파일 0개
 
 ✅ 3단계 캐릭터 생성 · 웨이브락 3지점 · 주간 일정 편성 · 실시간 자동 진행 ·
 오프라인 리포트 · 볼더링 문제 5개 · 턴제 베타 선택 · 4단계 판정 · 무브 숙련도 ·

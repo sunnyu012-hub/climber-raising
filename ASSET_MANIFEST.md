@@ -96,6 +96,16 @@
 
 암장 사진이 아니라 색으로 구분되는 도트 썸네일이다. 새 지점은 `theme` 색 3개만 정하면 된다.
 
+## 4-2. 지역·장비 표시 도트
+| 항목 | 값 |
+|---|---|
+| 지점 썸네일 | `src/ui/OnboardingFlow.tsx` `GymThumb` · SVG 28×28 · `Gym.theme` 색 |
+| 지도 지점 표시 | `src/ui/menu/WorldScreen.tsx` · 색 사각형 + 방문 표시(✓/?) |
+| 장비 색 견본 | `src/ui/GearPanel.tsx` `.slot-swatch` · `EquipmentItem.color` 한 색 |
+| 임시 여부 | ✅ 임시 |
+
+장비 아이콘을 그리지 않는다. **색 하나**로 구분한다 — 장비를 늘려도 에셋이 안 늘어난다.
+
 ## 5. 아이콘
 | 항목 | 값 |
 |---|---|

@@ -198,3 +198,141 @@ export const SHIRTS = [ '#e8916f', /* … */ '#새로운색' ] as const
 ## 7. 밸런스만 바꾸고 싶다면
 `src/game/balance.ts` 한 파일. 콘텐츠 파일에 숫자를 흩뿌리지 마라.
 바꾼 뒤 `npm run test`로 회귀를 확인하고 `docs/BALANCE.md`를 갱신한다.
+
+
+---
+
+# 전체 시스템 콘텐츠 추가법 (업데이트 #3)
+
+아래는 전부 `src/content/` 안에서만 끝난다. 추가 후 `npm run test`를 돌리면
+콘텐츠 검사가 오타 난 id와 끊어진 참조를 잡아준다.
+
+## 지역 추가 — `regions.ts`
+```ts
+{
+  id: 'gyeongnam',              // 세이브가 참조 · 영구 불변
+  displayName: '경남',
+  order: 1,
+  tier: 'domestic',             // home | domestic | overseas | world
+  blurb: '부산 옆 동네. 주말에 다녀올 만한 거리다.',
+  unlock: { level: 8, clears: 12, regions: ['busan'] },
+  travelCost: 60000,
+  travelDays: 2,
+  reward: { exp: 300, money: 0, badge: 'badge-gyeongnam' },
+}
+```
+`unlock.comingSoon: true`를 넣으면 **조건을 다 채워도 안 열리고** "콘텐츠 준비 중"으로 표시된다.
+그 지역 암장을 실제로 만들기 전까지는 이걸 붙여둔다.
+
+## 암장 추가 — `gyms.ts`
+```ts
+{
+  id: 'gyeongnam-sunrise',
+  regionId: 'gyeongnam',
+  brandId: 'independent',       // 웨이브락과 다르면 '원정'으로 취급된다
+  displayName: '선라이즈 클라이밍 (가상)',
+  branchName: '선라이즈',
+  tagline: '게임 내 분위기 문구',
+  character: '어떤 동네인지 한 줄',
+  wallTypes: ['슬랩', '오버행'],
+  npcIds: ['owner'],
+  homeBonus: [],                // 유불리를 주려면 SkillEffect[]
+  scale: 'small',
+  facilities: ['볼더링'],
+  visitCost: 45000,
+  theme: { sign: '#e8916f', wall: '#d3cdbb', accent: '#c96f4e' },
+  signature: { id: 'ev-x', name: '고유 이벤트', text: '...', chance: 0.3, effect: { mood: 5 } },
+  unlock: { level: 8 },
+}
+```
+> ⚠️ 실존 암장의 상표나 특징을 사실처럼 만들지 마라. 웨이브락 밖은 **가상 이름**을 쓴다.
+
+## 문제 · 베타 추가 — `problems.ts`
+기본 형식은 이 문서 3번 항목 참조. 추가로 쓸 수 있는 필드:
+```ts
+isProject: true,              // 실패해도 진척(이해도)이 남는 프로젝트 문제
+holds: ['슬로퍼', '핀치'],     // 도감 표시용
+setUntilWeek: 12,             // 세팅 교체 예정 주차 (표시용)
+```
+`gymId`에 **브랜드 id**를 쓰면 그 브랜드 모든 지점에, **암장 id**를 쓰면 그 암장에만 나온다.
+
+## 퀘스트 추가 — `quests.ts`
+```ts
+{
+  id: 'npc-owner-favor',
+  kind: 'npc',                  // tutorial|daily|weekly|story|npc|gym|expedition|growth
+  name: '사장님의 부탁',
+  desc: '설명',
+  npcId: 'owner',
+  goals: [
+    { event: 'climb.clear', count: 3, label: '완등' },
+    { event: 'money.earn', count: 50000, sumField: 'amount', label: '수입' },
+  ],
+  reward: { exp: 120, money: 25000, fame: 8, itemId: '...', title: '...', skillPoint: 1 },
+  unlock: { npcFriendship: { owner: 20 } },
+  next: 'npc-owner-2',          // 끝내면 자동으로 열리는 다음 퀘스트
+}
+```
+**목표는 이벤트로만 판정된다.** `event`에 쓸 수 있는 값은 `GameEvent['t']`:
+`climb.attempt` `climb.clear` `climb.fall` `move.used` `activity.done`
+`money.earn` `money.spend` `npc.talk` `npc.friendship` `gym.visit` `region.unlock`
+`item.get` `item.equip` `injury` `healthy.week` `expedition.done`
+`competition.done` `level.up` `skill.learn`
+
+- `match: { kind: 'job' }` — 이벤트 필드가 일치할 때만 센다
+- `sumField: 'amount'` — 횟수 대신 그 숫자를 누적한다 (돈 벌기 등)
+
+## 업적 · 칭호 추가 — `progression.ts`
+```ts
+// 업적 — 퀘스트와 같은 goals 문법
+{ id: 'ach-x', name: '...', desc: '...',
+  goals: [{ event: 'climb.clear', count: 20, label: '완등' }],
+  reward: { title: 'title-x', fame: 30, money: 50000 } }
+
+// 칭호 — 대부분 수집용, 작은 효과를 붙일 수 있다
+{ id: 'title-x', name: '...', desc: '...', effect: { kind: 'statBonus', stat: 'mental', value: 1 } }
+```
+
+## 장비 추가 — `equipment.ts`
+```ts
+{
+  id: 'shoes-pro', name: '프로 모델 암벽화', slot: 'shoes',
+  desc: '한 줄 설명', color: '#c9553f',
+  price: 380000, sellRatio: 0.4,
+  effects: [{ kind: 'moveChance', move: 'heelhook', value: 0.08 }],   // 비우면 검사에서 경고
+  stackable: false, source: '암장 프로숍',
+}
+```
+슬롯: `shoes` `chalkbag` `chalk` `tape` `apparel` `accessory` — 해금 레벨은 `SLOT_UNLOCK_LEVEL`.
+
+## 상점 상품 추가 — `shop.ts`
+아이템을 먼저 만든 뒤 `entries`에 한 줄:
+```ts
+{ itemId: 'shoes-pro', stock: null, unlock: { level: 10, clears: 20 } }
+```
+`stock: null` = 무제한, 숫자 = 그 개수만.
+
+## 알바(커리어) 추가
+1. `activities.ts`에 활동을 만든다 (`kind: 'job'`)
+2. `progression.ts`의 `CAREERS`에 트랙을 잇는다
+```ts
+{ id: 'car-film', name: '촬영 보조', tier: 'mid', activityId: 'job-film',
+  desc: '...', unlockAt: 60, requires: 'car-wash' }
+```
+`requires` 트랙의 경력이 `unlockAt`일이 되면 열린다. `activityId`가 비어 있으면 "준비 중"으로 표시된다.
+
+## 시즌 · 대회 추가 — `progression.ts`
+```ts
+{ id: 'comp-x', name: '...', gymId: 'waverock-seomyeon', blurb: '...',
+  entryFee: 20000, unlock: { level: 4, clears: 3 },
+  problemIds: ['wl-001', 'wl-002', 'wl-004'],
+  tiers: [ { minScore: 0, tier: '참가', money: 0, fame: 3 },
+           { minScore: 70, tier: '은메달', money: 80000, fame: 25 } ] }
+```
+> 시즌의 실제 시작·종료 시각은 **서버가 정한다**. 로컬에서는 구조만 표시한다.
+
+## 확인
+```bash
+npm run test    # 콘텐츠 검사 포함
+```
+개발 빌드에서는 **메뉴 → 개발자 도구 → 콘텐츠 검사**로도 볼 수 있다.

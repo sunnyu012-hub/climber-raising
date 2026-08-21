@@ -23,16 +23,47 @@ src/
     clock.ts       now() — 나중에 서버 시간으로 교체할 지점
     character.ts   파생 스탯, 관절 단계, 숙련도 곡선, 경고
     characterGen.ts 캐릭터 랜덤 생성 (외형·체형·주특기·성격·고정총합 능력치) — 전부 순수 함수
+    events.ts      ★ 이벤트 스파인 — 모든 진행이 지나가는 한 지점
+    unlock.ts      ★ 해금 판정 단일 창구 (지역·암장·상점·퀘스트·대회 공용)
+    world.ts       암장 이동 · 원정 · 지역 해금
+    equipment.ts   장비 획득·장착·슬롯 / shop.ts 구매·판매
+    quests.ts      퀘스트 개방·갱신·보상 (진행 판정은 events.ts가 한다)
+    careers.ts     알바 커리어 · 활동 잠금 판정
+    projects.ts    프로젝트 문제 진척
+    competition.ts 미니대회 (평소와 같은 resolveStep을 씀)
+    ranking.ts     내 예상 점수 (순위는 서버 몫)
     climb.ts       등반 한 동작 판정 (핵심)
     progress.ts    일정 진행 / 오프라인 계산 / 시간 단축
     newGame.ts     게스트 클라이머 초기 상태
   content/     ← 데이터. 코드 수정 없이 콘텐츠를 늘리는 곳
     gyms.ts problems.ts activities.ts skills.ts npcs.ts moves.ts
-    nicknames.ts appearance.ts traits.ts   ← 캐릭터 생성용 풀(닉네임/팔레트/주특기·성격·체형)
+    nicknames.ts appearance.ts traits.ts   ← 캐릭터 생성용 풀
+    regions.ts equipment.ts shop.ts quests.ts progression.ts
+    validate.ts                            ← 콘텐츠 참조 검사 (끊어진 id·중복 id)
   store/       ← zustand + 저장 어댑터
     gameStore.ts localAdapter.ts supabaseAdapter.ts storage.ts migrate.ts
   ui/          ← 화면. 계산 금지, 표시만.
 ```
+
+## 2-1. 이벤트 스파인 (가장 중요한 구조)
+
+```
+플레이 행동
+  → emit(state, GameEvent)        game/events.ts
+      ├─ 기록 통계 (stats)
+      ├─ 퀘스트 진행 (quests)
+      ├─ 업적 판정 (achievements)
+      └─ 도감 발견 (collection)
+```
+
+`GameEvent`는 **"무슨 일이 있었는가"**의 유일한 기록이다.
+화면이 "퀘스트 완료했다"고 제출하는 경로가 없다 — 실제로 일어난 일만 흘려보낸다.
+
+이 구조가 서버 전환 지점이기도 하다. 서버는 같은 이벤트 스트림을 받아
+같은 `emit()` 로직으로 재계산해 보상을 확정한다. → `docs/SERVER_AUTHORITY.md`
+
+**새 시스템이 진행을 추적해야 하면** `emit()`에 구독을 하나 더 붙인다.
+상태를 직접 고치는 경로를 새로 만들면 서버에서 검증할 수 없는 구멍이 된다.
 
 ## 3. 데이터 흐름
 ```
@@ -89,6 +120,11 @@ interface SaveAdapter {
 다시 만들기        더보기에서 draft 생성 → 최종 단계에서 3택
                   (외형만 변경 / 전체 초기화 / 취소) — 취소해도 세이브 그대로
 ```
+
+### v3 → v4 마이그레이션
+전체 시스템 뼈대 필드(`stats`·`collection`·`quests`·`world`·`inventory`·`career`·
+`projects`·`competitionRecords`·`crew`·`titles`·`shopBought`·`homeGymId`)를 기본값으로 채운다.
+**이미 있는 값은 절대 덮어쓰지 않는다** — 여러 번 돌려도 결과가 같다(멱등). 테스트로 강제한다.
 
 ### v1/v2 → v3 마이그레이션
 | 필드 | 처리 |
