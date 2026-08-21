@@ -1,4 +1,5 @@
 import { BALANCE } from './balance'
+import { getProblem } from '../content/problems'
 import type { GameState, ProjectProgress } from './types'
 
 /**
@@ -6,6 +7,9 @@ import type { GameState, ProjectProgress } from './types'
  * 시도할수록 "이해도"가 오르고, 그 이해도가 다음 시도의 성공률을 조금 올린다.
  * (이해도 보정은 `climb.ts`의 `baseChanceOf`에서 한 번만 적용된다.)
  */
+/** 프로젝트로 지정된 문제만 진척을 남긴다 (`ClimbingProblem.isProject`). */
+export const isProjectProblem = (problemId: string): boolean => !!getProblem(problemId)?.isProject
+
 export const projectOf = (s: GameState, problemId: string): ProjectProgress =>
   (s.projects[problemId] ??= {
     problemId, bestStep: 0, attempts: 0, knownBetas: [], understanding: 0,
@@ -18,6 +22,7 @@ export const understandingOf = (s: GameState, problemId: string): number =>
 export function noteStep(
   s: GameState, problemId: string, stepIndex: number, choiceId: string, success: boolean,
 ): void {
+  if (!isProjectProblem(problemId)) return
   const p = projectOf(s, problemId)
   if (success) {
     p.bestStep = Math.max(p.bestStep, stepIndex + 1)
@@ -30,5 +35,6 @@ export function noteStep(
 }
 
 export function noteAttempt(s: GameState, problemId: string): void {
+  if (!isProjectProblem(problemId)) return
   projectOf(s, problemId).attempts += 1
 }

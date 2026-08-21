@@ -7,6 +7,7 @@ import { restDaysInWeek } from '../game/progress'
 import { getActivity } from '../content/activities'
 import { getGym } from '../content/gyms'
 import { problemsOfGym } from '../content/problems'
+import { activeQuests } from '../game/quests'
 import { useGame } from '../store/gameStore'
 import { Card, Gauge, JointRow, StatLine, Warnings } from './bits'
 import { SpriteButton } from './Sprite'
@@ -21,6 +22,9 @@ export function HomeScreen({ go, remaining }: { go: (t: TabKey) => void; remaini
   const problems = problemsOfGym(state.gymId)
   const body = getBodyType(c.reach)
   const spec = getSpecialty(c.specialtyId)
+  const quests = activeQuests(state)
+  const readyQuests = quests.filter((q) => q.progress.completed && !q.progress.claimed)
+  const inProgress = quests.filter((q) => !q.progress.completed)
   const cleared = problems.filter((p) => state.records[p.id]?.cleared).length
 
   const pose = c.condition.fatigue > 70 || c.condition.hp < 25 ? 'tired'
@@ -94,6 +98,19 @@ export function HomeScreen({ go, remaining }: { go: (t: TabKey) => void; remaini
         </Card>
       )}
 
+      <Card title="오늘의 암장">
+        <div className="row" style={{ alignItems: 'center', gap: 8 }}>
+          <span className="slot-swatch" style={{ background: gym.theme.sign, borderColor: gym.theme.accent }} />
+          <span className="grow" style={{ minWidth: 0 }}>
+            <span className="small" style={{ display: 'block' }}>{gym.displayName}</span>
+            <span className="tiny muted">
+              친숙도 {Math.floor(state.world.gymFamiliarity[gym.id] ?? 0)} ·
+              문제 {problems.length}개 · 완등 {cleared}개
+            </span>
+          </span>
+        </div>
+      </Card>
+
       <Card title="지금 할 수 있는 것">
         <button className="btn primary center" onClick={() => go('climb')}>
           🧗 문제에 도전한다 ({cleared}/{problems.length} 완등)
@@ -108,6 +125,37 @@ export function HomeScreen({ go, remaining }: { go: (t: TabKey) => void; remaini
           접속 못 해도 일정은 알아서 굴러가니 걱정 마세요.
         </div>
       </Card>
+
+      {readyQuests.length > 0 && (
+        <Card title="받을 보상이 있어요" right={<span className="mi-badge">{readyQuests.length}</span>}>
+          {readyQuests.map(({ quest }) => (
+            <div key={quest.id} className="row small" style={{ padding: '3px 0' }}>
+              <span className="grow">📜 {quest.name}</span>
+              <span className="tiny muted">완료</span>
+            </div>
+          ))}
+          <div className="spacer" />
+          <button className="btn primary center" onClick={() => go('menu')}>메뉴 → 퀘스트에서 받기</button>
+        </Card>
+      )}
+
+      {inProgress.length > 0 && (
+        <Card title="진행 중인 목표">
+          {inProgress.slice(0, 3).map(({ quest, progress }) => {
+            const g = quest.goals[0]
+            const cur = Math.min(g.count, progress.counts[0] ?? 0)
+            return (
+              <div key={quest.id} style={{ marginBottom: 8 }}>
+                <div className="row tiny" style={{ marginBottom: 2 }}>
+                  <span className="grow">{quest.name}</span>
+                  <span className="muted">{cur}/{g.count}</span>
+                </div>
+                <div className="gauge exp"><i style={{ width: `${(cur / g.count) * 100}%` }} /></div>
+              </div>
+            )
+          })}
+        </Card>
+      )}
 
       <Card title="최근 기록">
         {state.log.length === 0 ? (

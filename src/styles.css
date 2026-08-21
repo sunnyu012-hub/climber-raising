@@ -506,3 +506,10 @@ hr.sep { border: 0; border-top: 2px dashed var(--line); margin: 10px 0; }
   width: 26px; height: 26px; flex-shrink: 0;
   border: 2px solid var(--brown);
 }
+
+.proj-box {
+  border: 2px dashed var(--sky-dark);
+  background: #eef5f9;
+  padding: 7px 9px;
+  margin-bottom: 8px;
+}

@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { MOVE_LABEL, STAT_LABEL } from '../game/balance'
+import { GearPanel } from './GearPanel'
 import { GENDER_LABEL } from '../game/newGame'
 import { getBodyType, getPersonality, getSpecialty } from '../content/traits'
 import { Sprite } from './Sprite'
@@ -6,7 +8,7 @@ import { levelExpNeeded, statExpNeeded } from '../game/character'
 import { ALL_MOVES } from '../content/moves'
 import { BRANCH_BLURB, BRANCH_LABEL, SKILLS } from '../content/skills'
 import { useGame } from '../store/gameStore'
-import { Card, JointRow, StatLine, Soon } from './bits'
+import { Card, JointRow, StatLine } from './bits'
 import type { SkillBranch, StatKey } from '../game/types'
 
 export function GrowthScreen() {
@@ -17,6 +19,7 @@ export function GrowthScreen() {
   const pers = getPersonality(c.personalityId)
 
   const branches: SkillBranch[] = ['technician', 'power', 'wellness']
+  const [seg, setSeg] = useState<'stats' | 'moves' | 'skills' | 'gear' | 'body'>('stats')
 
   return (
     <div className="screen">
@@ -47,7 +50,16 @@ export function GrowthScreen() {
         </div>
       </Card>
 
-      <Card title="능력치">
+      <div className="seg">
+        {([
+          ['stats', '능력치'], ['moves', '무브'], ['skills', '스킬'],
+          ['gear', '장비'], ['body', '몸 상태'],
+        ] as const).map(([k, label]) => (
+          <button key={k} data-on={seg === k ? '1' : '0'} onClick={() => setSeg(k)}>{label}</button>
+        ))}
+      </div>
+
+      {seg === 'stats' && (<><Card title="능력치">
         {(Object.keys(c.stats) as StatKey[]).map((k) => (
           <div key={k} style={{ marginBottom: 8 }}>
             <div className="row tiny" style={{ marginBottom: 2 }}>
@@ -63,7 +75,9 @@ export function GrowthScreen() {
         ))}
       </Card>
 
-      <Card title="컨디션">
+      </>)}
+
+      {seg === 'body' && (<><Card title="컨디션">
         <StatLine label="체력" value={c.condition.hp} kind="hp" />
         <StatLine label="피로" value={c.condition.fatigue} kind="fatigue" />
         <StatLine label="의욕" value={c.condition.mood} kind="mood" />
@@ -71,7 +85,9 @@ export function GrowthScreen() {
         <JointRow condition={c.condition} />
       </Card>
 
-      <Card title="무브 숙련도" right={<span className="tiny muted">쓸수록 오르고, 높을수록 천천히</span>}>
+      </>)}
+
+      {seg === 'moves' && (<><Card title="무브 숙련도" right={<span className="tiny muted">쓸수록 오르고, 높을수록 천천히</span>}>
         {ALL_MOVES.map((m) => (
           <div key={m} className="stat-row">
             <span className="lbl" style={{ width: 84 }}>{MOVE_LABEL[m]}</span>
@@ -83,7 +99,9 @@ export function GrowthScreen() {
         ))}
       </Card>
 
-      <Card title="스킬트리" right={<span className="tiny muted">포인트 {c.skillPoints}</span>}>
+      </>)}
+
+      {seg === 'skills' && (<><Card title="스킬트리" right={<span className="tiny muted">포인트 {c.skillPoints}</span>}>
         {branches.map((b) => (
           <div key={b} style={{ marginBottom: 12 }}>
             <div className="small b">{BRANCH_LABEL[b]}</div>
@@ -119,12 +137,9 @@ export function GrowthScreen() {
         <div className="tiny muted">유연성·지구력·소셜 계열은 다음 업데이트에 추가됩니다.</div>
       </Card>
 
-      <Card title="장비">
-        <Soon text="장비와 꾸미기" />
-        <div className="tiny muted" style={{ marginTop: 6 }}>
-          암벽화·초크백·테이핑이 성공률과 관절에 영향을 줄 예정이에요.
-        </div>
-      </Card>
+      </>)}
+
+      {seg === 'gear' && <GearPanel />}
     </div>
   )
 }

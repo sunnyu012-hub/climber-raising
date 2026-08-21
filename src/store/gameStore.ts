@@ -140,7 +140,14 @@ export const useGame = create<Store>((set, get) => ({
     const climber = generateCharacter({
       seed: d.seed, nickname: d.nickname.trim(), gender: d.gender, age: d.age,
     })
-    set({ state: createNewGame(climber, d.gymId!), draft: null, session: null })
+    // 새 게임도 튜토리얼 퀘스트와 해금을 바로 열어준다
+    const state = createNewGame(climber, d.gymId!)
+    // 홈짐도 "방문한 암장"이다 — 이벤트를 쏴야 퀘스트·도감·통계가 센다
+    emit(state, { t: 'gym.visit', gymId: d.gymId! })
+    syncSlots(state)
+    unlockRegions(state)
+    syncQuests(state)
+    set({ state, draft: null, session: null })
     void get().adapter.clearDraft().catch(() => {})
     get().persist()
   },
@@ -165,6 +172,7 @@ export const useGame = create<Store>((set, get) => ({
     if (d.gymId) state.gymId = d.gymId
     state.log = [{ at: now(), icon: '✂️', text: '머리를 자르고 마음도 좀 바꿨다.' }, ...state.log]
       .slice(0, BALANCE.log.max)
+    syncQuests(state)
     set({ state, draft: null })
     void get().adapter.clearDraft().catch(() => {})
     get().persist()

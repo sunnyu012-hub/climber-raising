@@ -56,8 +56,11 @@ export function travelTo(s: GameState, gymId: string): string | null {
     c.mood = clamp100(c.mood + 8)
     if (!s.world.expeditions.includes(gymId)) s.world.expeditions.push(gymId)
     emit(s, { t: 'expedition.done', regionId: gym.regionId, gymId })
-    const badge = getRegion(gym.regionId)?.reward?.badge
-    if (badge && !s.world.badges.includes(badge)) s.world.badges.push(badge)
+    // 다녀온 곳마다 기념 배지 하나. 지역 보상이 따로 있으면 그것도 같이 준다.
+    for (const badge of [`badge-${gym.id}`, getRegion(gym.regionId)?.reward?.badge]) {
+      if (badge && !s.world.badges.includes(badge)) s.world.badges.push(badge)
+    }
+    s.world.fame += 20
     pushLog(s, '🚌', `${gym.branchName} 원정을 다녀왔다.`)
   } else {
     pushLog(s, '🚶', `${gym.branchName}으로 옮겼다.`)

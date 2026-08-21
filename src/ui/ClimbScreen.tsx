@@ -26,6 +26,10 @@ export function ClimbScreen() {
         </div>
       </Card>
 
+      <div className="tiny muted center" style={{ margin: '-4px 0 10px' }}>
+        다른 지점 문제를 붙으려면 메뉴 → 지도에서 이동하세요.
+      </div>
+
       {injured && (
         <div className="warn-box danger">
           ⚠️ {josa(JOINT_LABEL[worst.key], '이/가')} {JOINT_STAGE_LABEL[jointStage(worst.value)]} 상태예요.
@@ -40,6 +44,7 @@ export function ClimbScreen() {
 
       {problems.map((p) => {
         const rec = state.records[p.id]
+        const proj = p.isProject ? state.projects[p.id] : undefined
         return (
           <div key={p.id} className="plist">
             <div className="ph">
@@ -56,6 +61,21 @@ export function ClimbScreen() {
             <div className="tiny muted" style={{ margin: '6px 0' }}>
               {rec ? `시도 ${rec.attempts}회` : '아직 안 붙어봤어요 — 초견 보너스 있음'}
             </div>
+
+            {p.isProject && (
+              <div className="proj-box">
+                <div className="row tiny" style={{ marginBottom: 3 }}>
+                  <span className="grow">🧩 프로젝트 문제 — 실패해도 진척이 남아요</span>
+                  <span className="muted">{Math.floor(proj?.understanding ?? 0)}%</span>
+                </div>
+                <div className="gauge exp"><i style={{ width: `${proj?.understanding ?? 0}%` }} /></div>
+                {proj && (
+                  <div className="tiny muted" style={{ marginTop: 3 }}>
+                    최고 {proj.bestStep}/{p.steps.length}동작 · 찾은 베타 {proj.knownBetas.length}개
+                  </div>
+                )}
+              </div>
+            )}
             <button
               className={`btn ${rec?.cleared ? '' : 'primary'} center`}
               disabled={injured}
