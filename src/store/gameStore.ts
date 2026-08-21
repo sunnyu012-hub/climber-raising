@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import { BALANCE } from '../game/balance'
 import { now } from '../game/clock'
-import { collectModifiers, isInjured } from '../game/character'
+import { isInjured, stateModifiers } from '../game/character'
+import { emit, moveEvents } from '../game/events'
+import { noteAttempt, noteStep } from '../game/projects'
 import { resolveStep, isSuccess } from '../game/climb'
 import {
   advanceSchedule, applyStepResult, clearReward, dayLengthMs, failReward, grantExp,
@@ -11,13 +13,18 @@ import { createDraft, createNewGame, draftBlocker, SAVE_VERSION } from '../game/
 import { generateCharacter, newSeed, rollNickname } from '../game/characterGen'
 import { systemRng } from '../game/rng'
 import { getProblem } from '../content/problems'
-import { getGym } from '../content/gyms'
+
 import { getSkill } from '../content/skills'
 import { PRESETS } from '../content/activities'
 import { localAdapter } from './localAdapter'
 import { migrate } from './migrate'
+import { travelTo, unlockRegions } from '../game/world'
+import { buyItem, sellItem } from '../game/shop'
+import { equipItem, syncSlots, unequipSlot } from '../game/equipment'
+import { claimQuest, syncQuests } from '../game/quests'
+import { runCompetition, type CompetitionResult } from '../game/competition'
 import type { SaveAdapter } from './storage'
-import type { ClimbingProblem, GameState, OnboardingDraft, StepResult } from '../game/types'
+import type { ClimbingProblem, EquipSlot, GameState, OnboardingDraft, StepResult } from '../game/types'
 
 /** 진행 중인 등반 세션. 저장하지 않는다(중간에 나가면 시도는 없던 일이 된다). */
 export interface ClimbSession {
@@ -62,6 +69,18 @@ interface Store {
 
   learnSkill: (skillId: string) => void
   dismissReport: () => void
+  // ---- 전체 시스템 뼈대 액션 ----
+  travel: (gymId: string) => string | null
+  buy: (itemId: string) => string | null
+  sell: (itemId: string) => string | null
+  equip: (itemId: string) => string | null
+  unequip: (slot: EquipSlot) => void
+  claim: (questId: string) => string | null
+  setTitle: (titleId: string | null) => void
+  enterCompetition: (competitionId: string) => CompetitionResult | string
+  /** 개발자 도구 — 운영 빌드에서는 호출되지 않는다 */
+  devApply: (patch: (s: GameState) => void) => void
+
   setFastMode: (v: boolean) => void
   setTimeScale: (v: number) => void
   resetGame: () => Promise<void>
@@ -91,6 +110,10 @@ export const useGame = create<Store>((set, get) => ({
     }
 
     const { state, report } = advanceSchedule(loaded, now(), systemRng)
+    // 세이브를 불러온 직후에도 해금·퀘스트를 맞춘다(콘텐츠가 늘어났을 수 있다)
+    syncSlots(state)
+    unlockRegions(state)
+    syncQuests(state)
     set({ state: { ...state, pendingReport: report }, ready: true, draft: null })
     get().persist()
   },
@@ -200,10 +223,18 @@ export const useGame = create<Store>((set, get) => ({
   startClimb(problemId) {
     const problem = getProblem(problemId)
     if (!problem) return
-    const state = get().state
-    if (isInjured(state.climber.condition)) return
+    const prev = get().state
+    if (isInjured(prev.climber.condition)) return
+
+    const state = structuredClone(prev)
     const record = state.records[problemId]
+
+    // 붙는 순간이 곧 "도전"이다 — 퀘스트·업적·도감이 이 이벤트를 본다
+    emit(state, { t: 'climb.attempt', problemId, gymId: state.gymId, grade: problem.grade })
+    noteAttempt(state, problemId)
+
     set({
+      state,
       session: {
         problem,
         stepIndex: 0,
@@ -226,9 +257,14 @@ export const useGame = create<Store>((set, get) => ({
     if (!choice) return
 
     const state = structuredClone(get().state)
-    const mods = collectModifiers(state.climber, state.npc, getGym(state.gymId))
+    // 표시된 성공률과 실제 판정이 어긋나지 않도록 화면과 같은 모디파이어를 쓴다
+    const mods = stateModifiers(state)
     const result = resolveStep({ climber: state.climber, problem: session.problem, mods }, choice, systemRng)
     const hurt = applyStepResult(state.climber, result, systemRng)
+
+    for (const ev of moveEvents(choice.moves)) emit(state, ev)
+    noteStep(state, session.problem.id, session.stepIndex, choice.id, isSuccess(result.outcome))
+    if (hurt) emit(state, { t: 'injury', joint: hurt })
 
     const next: ClimbSession = { ...session, lastResult: result, hurt }
 
@@ -260,6 +296,11 @@ export const useGame = create<Store>((set, get) => ({
         .slice(0, BALANCE.log.max)
     }
 
+    if (next.status !== 'active') {
+      unlockRegions(state)
+      syncQuests(state)
+    }
+
     set({ state, session: next })
     get().persist()
   },
@@ -279,6 +320,7 @@ export const useGame = create<Store>((set, get) => ({
     if (skill.requires && !c.skills.includes(skill.requires)) return
     c.skillPoints -= skill.cost
     c.skills.push(skillId)
+    emit(state, { t: 'skill.learn', skillId })
     state.log = [{ at: now(), icon: '✨', text: `스킬 «${skill.name}» 습득!` }, ...state.log]
       .slice(0, BALANCE.log.max)
     set({ state })
@@ -287,6 +329,92 @@ export const useGame = create<Store>((set, get) => ({
 
   dismissReport() {
     set({ state: { ...get().state, pendingReport: null } })
+    get().persist()
+  },
+
+  travel(gymId) {
+    const state = structuredClone(get().state)
+    const err = travelTo(state, gymId)
+    if (err) return err
+    unlockRegions(state)
+    syncQuests(state)
+    set({ state })
+    get().persist()
+    return null
+  },
+
+  buy(itemId) {
+    const state = structuredClone(get().state)
+    const err = buyItem(state, itemId)
+    if (err) return err
+    syncQuests(state)
+    set({ state })
+    get().persist()
+    return null
+  },
+
+  sell(itemId) {
+    const state = structuredClone(get().state)
+    const err = sellItem(state, itemId)
+    if (err) return err
+    set({ state })
+    get().persist()
+    return null
+  },
+
+  equip(itemId) {
+    const state = structuredClone(get().state)
+    const err = equipItem(state, itemId)
+    if (err) return err
+    syncQuests(state)
+    set({ state })
+    get().persist()
+    return null
+  },
+
+  unequip(slot) {
+    const state = structuredClone(get().state)
+    unequipSlot(state, slot)
+    set({ state })
+    get().persist()
+  },
+
+  claim(questId) {
+    const state = structuredClone(get().state)
+    const err = claimQuest(state, questId)
+    if (err) return err
+    unlockRegions(state)
+    set({ state })
+    get().persist()
+    return null
+  },
+
+  setTitle(titleId) {
+    const state = structuredClone(get().state)
+    if (titleId && !state.titles.includes(titleId)) return
+    state.equippedTitle = titleId
+    set({ state })
+    get().persist()
+  },
+
+  enterCompetition(competitionId) {
+    const state = structuredClone(get().state)
+    const result = runCompetition(state, competitionId, systemRng)
+    if (typeof result === 'string') return result // 참가할 수 없는 이유
+    syncQuests(state)
+    set({ state })
+    get().persist()
+    return result
+  },
+
+  devApply(patch) {
+    if (!import.meta.env.DEV) return
+    const state = structuredClone(get().state)
+    patch(state)
+    syncSlots(state)
+    unlockRegions(state)
+    syncQuests(state)
+    set({ state })
     get().persist()
   },
 
@@ -335,6 +463,16 @@ function finishClear(state: GameState, problem: ClimbingProblem, session: ClimbS
   session.speedupTotal += gain
   session.gainedExp = exp
 
+  // flash = 이 문제를 처음 붙어서 한 번에 완등 (시도 기록이 없었다)
+  emit(state, {
+    t: 'climb.clear',
+    problemId: problem.id,
+    gymId: state.gymId,
+    grade: problem.grade,
+    onsight,
+    flash: onsight && session.retries === 0,
+  })
+
   state.records[problem.id] = {
     attempts: rec.attempts + 1,
     cleared: true,
@@ -363,6 +501,7 @@ function finishFall(state: GameState, problem: ClimbingProblem, session: ClimbSe
   grantStatExp(c, problem.reward.statExp, reward.statExpMult)
   session.gainedExp = exp
 
+  emit(state, { t: 'climb.fall', problemId: problem.id, gymId: state.gymId })
   state.records[problem.id] = { ...rec, attempts: rec.attempts + 1 }
   state.directPlayCount += 1
   c.condition.mood = Math.max(0, c.condition.mood - 3)

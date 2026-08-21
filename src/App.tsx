@@ -10,7 +10,8 @@ import { ScheduleScreen } from './ui/ScheduleScreen'
 import { ClimbScreen } from './ui/ClimbScreen'
 import { ClimbSessionView } from './ui/ClimbSessionView'
 import { GrowthScreen } from './ui/GrowthScreen'
-import { MoreScreen } from './ui/MoreScreen'
+import { MenuScreen } from './ui/MenuScreen'
+import { ToastHost } from './ui/Toast'
 import { OfflineReport } from './ui/OfflineReport'
 import { OnboardingFlow } from './ui/OnboardingFlow'
 
@@ -70,6 +71,7 @@ export default function App() {
   const gym = getGym(state.gymId)
 
   return (
+    <ToastHost>
     <div className="frame">
       <header className="topbar">
         <div style={{ minWidth: 0 }}>
@@ -95,12 +97,13 @@ export default function App() {
           {tab === 'schedule' && <ScheduleScreen />}
           {tab === 'climb' && <ClimbScreen />}
           {tab === 'growth' && <GrowthScreen />}
-          {tab === 'more' && <MoreScreen />}
+          {tab === 'menu' && <MenuScreen />}
         </>
       )}
 
       {!climbing && <TabBar tab={tab} onChange={setTab} />}
       <OfflineReport />
     </div>
+    </ToastHost>
   )
 }

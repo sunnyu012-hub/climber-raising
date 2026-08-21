@@ -1,11 +1,11 @@
-export type TabKey = 'home' | 'schedule' | 'climb' | 'growth' | 'more'
+export type TabKey = 'home' | 'schedule' | 'climb' | 'growth' | 'menu'
 
 const TABS: { key: TabKey; ico: string; label: string }[] = [
   { key: 'home', ico: '🏠', label: '홈' },
   { key: 'schedule', ico: '🗓️', label: '일정' },
   { key: 'climb', ico: '🧗', label: '등반' },
   { key: 'growth', ico: '📈', label: '성장' },
-  { key: 'more', ico: '⋯', label: '더보기' },
+  { key: 'menu', ico: '☰', label: '메뉴' },
 ]
 
 export function TabBar({ tab, onChange }: { tab: TabKey; onChange: (t: TabKey) => void }) {

@@ -16,7 +16,7 @@ import type { UnlockRule } from '../game/types'
  *
  * errors = 게임이 깨지는 것 / warnings = 의도한 골격일 수도 있는 것
  */
-export interface ValidationResult { errors: string[]; warnings: string[] }
+export interface ValidationResult { errors: string[]; warnings: string[]; counts: Record<string, number> }
 
 const dupes = (ids: string[]): string[] =>
   [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))]
@@ -24,6 +24,19 @@ const dupes = (ids: string[]): string[] =>
 export function validateContent(): ValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
+  const counts: Record<string, number> = {
+    지역: REGIONS.length,
+    암장: GYMS.length,
+    문제: PROBLEMS.length,
+    활동: ACTIVITIES.length,
+    스킬: SKILLS.length,
+    NPC: NPCS.length,
+    퀘스트: QUESTS.length,
+    업적: ACHIEVEMENTS.length,
+    칭호: TITLES.length,
+    장비: EQUIPMENT.length,
+    대회: COMPETITIONS.length,
+  }
   const has = (list: { id: string }[], id: string) => list.some((x) => x.id === id)
 
   const checkUnlock = (where: string, rule?: UnlockRule) => {
@@ -143,5 +156,5 @@ export function validateContent(): ValidationResult {
     if (s.requires && !has(SKILLS, s.requires)) errors.push(`스킬 ${s.id}: 없는 선행 스킬 ${s.requires}`)
   }
 
-  return { errors, warnings }
+  return { errors, warnings, counts }
 }

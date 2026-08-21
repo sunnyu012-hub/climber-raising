@@ -101,7 +101,7 @@ export function HomeScreen({ go, remaining }: { go: (t: TabKey) => void; remaini
         <div className="spacer" />
         <div className="row">
           <button className="btn ghost center grow" onClick={() => go('growth')}>📈 성장</button>
-          <button className="btn ghost center grow" onClick={() => go('more')}>👥 사람들</button>
+          <button className="btn ghost center grow" onClick={() => go('menu')}>👥 사람들</button>
         </div>
         <div className="tiny muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
           직접 등반하면 오늘 일정이 앞당겨지고 경험치도 더 받아요.

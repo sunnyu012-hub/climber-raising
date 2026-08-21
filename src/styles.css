@@ -434,3 +434,75 @@ hr.sep { border: 0; border-top: 2px dashed var(--line); margin: 10px 0; }
 .profile .p-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .profile .p-traits { font-size: 12px; margin-top: 3px; }
 .profile .p-gym { font-size: 12px; color: var(--sage-dark); margin-top: 2px; }
+
+/* ---------- 메뉴 허브 ---------- */
+.menu-grid { display: flex; flex-direction: column; gap: 6px; }
+.menu-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; text-align: left;
+  border: 2px solid var(--line); background: var(--paper);
+  padding: 10px 12px; min-height: 58px;
+}
+.menu-item:active { transform: translate(1px, 1px); }
+.menu-item .mi-icon { font-size: 20px; width: 26px; text-align: center; flex-shrink: 0; }
+.menu-item .mi-body { flex: 1; min-width: 0; }
+.menu-item .mi-label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.menu-item .mi-hint { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+.menu-item .mi-arrow { color: var(--muted); font-size: 18px; flex-shrink: 0; }
+.mi-badge {
+  background: var(--coral); color: #fff; border: 1px solid var(--coral-dark);
+  font-size: 11px; min-width: 18px; height: 18px; padding: 0 5px;
+  display: inline-grid; place-items: center;
+}
+
+/* ---------- 세그먼트 탭 ---------- */
+.seg {
+  display: flex; gap: 4px; margin-bottom: 10px;
+  border: 2px solid var(--line); background: var(--cream-2); padding: 3px;
+}
+.seg button {
+  flex: 1; min-width: 0; min-height: 42px;
+  border: 0; background: none; color: var(--muted);
+  font-size: 12px; padding: 4px 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+}
+.seg button[data-on='1'] { background: var(--paper); color: var(--brown); box-shadow: 2px 2px 0 var(--line); }
+.seg .seg-count { font-size: 10px; color: var(--muted); }
+
+/* ---------- 도감 ---------- */
+.dex-row {
+  display: flex; align-items: center; gap: 10px;
+  border: 2px solid var(--line); background: var(--paper);
+  padding: 8px 10px; margin-bottom: 5px; min-height: 46px;
+}
+.dex-row[data-got='0'] { opacity: 0.55; background: var(--cream-2); }
+.dex-mark {
+  width: 24px; height: 24px; flex-shrink: 0;
+  display: grid; place-items: center; font-size: 12px;
+  border: 1px solid var(--line); background: var(--cream-2);
+}
+.dex-row[data-got='1'] .dex-mark { background: var(--sage); color: #fff; border-color: var(--sage-dark); }
+
+/* ---------- 퀘스트 ---------- */
+.plist[data-ready='1'] { border-color: var(--sage); background: #f2f7f0; }
+
+/* ---------- 기록 KPI ---------- */
+.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.kpi > div {
+  border: 2px solid var(--line); background: var(--cream-2);
+  padding: 8px 2px; text-align: center;
+}
+.kpi b { display: block; font-size: 16px; color: var(--navy); font-weight: normal; }
+.kpi span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ---------- 장비 ---------- */
+.slot-row {
+  display: flex; align-items: center; gap: 10px;
+  border: 2px solid var(--line); background: var(--paper);
+  padding: 9px 10px; margin-bottom: 6px; width: 100%; text-align: left; min-height: 52px;
+}
+.slot-row[data-locked='1'] { opacity: 0.5; }
+.slot-swatch {
+  width: 26px; height: 26px; flex-shrink: 0;
+  border: 2px solid var(--brown);
+}
