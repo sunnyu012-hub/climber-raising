@@ -4,3 +4,6 @@ dist
 .env.local
 *.local
 .DS_Store
+
+# 단일 파일 배포 산출물
+dist-single
